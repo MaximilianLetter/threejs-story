@@ -1,24 +1,28 @@
 import * as THREE from 'three';
+import { SceneManager } from './core/SceneManager.ts';
+import { Intro } from './scenes/Intro.ts';
+import { Outro } from './scenes/Outro.ts';
 
-// Base Setup
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 5;
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
-// Content goes here
-const exmplCube = new THREE.Mesh(
-  new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-);
-scene.add(exmplCube);
+const manager = new SceneManager(renderer, camera);
+manager.changeScene(new Intro());
+setTimeout(() => {
+  manager.changeScene(new Outro());
+}, 2000);
 
-camera.position.z = 5;
+const clock = new THREE.Clock();
 
 function animate() {
-  renderer.render(scene, camera);
+  const dt = clock.getDelta();
+  manager.update(dt);
+
+  // Happens in the SceneManager
+  // renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
