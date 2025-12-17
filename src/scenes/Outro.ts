@@ -7,8 +7,8 @@ export class Outro extends BaseScene {
   private sphereMaterial: THREE.Material;
   private sphere!: THREE.Mesh;
 
-  constructor() {
-    super();
+  constructor(camera: THREE.Camera) {
+    super(camera);
 
     this.sphereMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, transparent: true });
     this.sphere = new THREE.Mesh(
