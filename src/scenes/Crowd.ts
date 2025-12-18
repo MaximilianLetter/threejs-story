@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BaseScene } from '../core/BaseScene';
 import { tweenToPromise } from '../utils/gsapPromise';
 import { randomWalk } from '../utils/gsapRandomWalk';
+import { Assets } from '../core/AssetManager';
 
 export class Crowd extends BaseScene {
   private controls!: OrbitControls;
@@ -18,6 +19,8 @@ export class Crowd extends BaseScene {
   private buildingMaterial: THREE.Material;
   private buildingGeometry: THREE.BoxGeometry;
   private buildings: THREE.Mesh[] = [];
+
+  private floorMaterial: THREE.Material;
 
   // Transition
   private animateInComplete: boolean = false;
@@ -64,11 +67,27 @@ export class Crowd extends BaseScene {
       this.scene.add(building);
     }
 
+    // Floor
+    this.floorMaterial = new THREE.MeshStandardMaterial({
+      map: Assets.textures.get('floor_concrete'),
+      alphaMap: Assets.textures.get('circle_mask'),
+      transparent: true
+    });
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      this.floorMaterial
+    );
+    floor.rotation.x = -Math.PI / 2;
+    this.scene.add(floor);
+
     const light = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(light);
 
     const dLight = new THREE.DirectionalLight(0xffffff, 1);
     this.scene.add(dLight);
+
+    console.log('CROWD SCENE STARTED');
   }
 
   enter(): Promise<void> {
@@ -101,7 +120,7 @@ export class Crowd extends BaseScene {
 
   exit(): Promise<void> {
     this.controls.enabled = false;
-    
+
     gsap.to(this.buildingMaterial, { opacity: 0, duration: 1 });
     return tweenToPromise(this.personMaterial, { opacity: 0, duration: 1 });
   }

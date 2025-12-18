@@ -19,6 +19,8 @@ export class Intro extends BaseScene {
 
     const light = new THREE.AmbientLight(0xffffff, 1);
     this.scene.add(light);
+
+    console.log('INTRO SCENE STARTED');
   }
 
   enter(): Promise<void> {
