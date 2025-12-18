@@ -8,10 +8,18 @@ class AssetManager {
   textures = new Map<string, THREE.Texture>();
   // models = new Map<string, THREE.Group>();
 
-  async loadTexture(name: string, url: string) {
+  async loadTexture(name: string, url: string, pixelated: boolean = false) {
     if (this.textures.has(name)) return this.textures.get(name)!;
 
     const texture = await this.textureLoader.loadAsync(url);
+
+    if (pixelated) {
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
+      texture.anisotropy = 1;
+    }
+
     this.textures.set(name, texture);
     console.log('Texture loaded: ', name);
     

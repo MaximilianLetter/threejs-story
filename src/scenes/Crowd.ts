@@ -11,8 +11,10 @@ export class Crowd extends BaseScene {
 
   // Initialization
   private personsAmount: number = 500;
-  private personMaterial: THREE.Material;
-  private personGeometry: THREE.BoxGeometry;
+  // private personMaterial: THREE.Material;
+  private personMaleMaterial: THREE.Material;
+  private personFemaleMaterial: THREE.Material;
+  private personGeometry: THREE.PlaneGeometry;
   private persons: THREE.Mesh[] = [];
 
   private buildingsAmount: number = 4;
@@ -34,16 +36,25 @@ export class Crowd extends BaseScene {
     this.controls.enableZoom = false;
 
     // Crowd
-    this.personMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00, transparent: true });
-    this.personGeometry = new THREE.BoxGeometry(0.2, 1, 0.2);
+    this.personMaleMaterial = new THREE.MeshBasicMaterial({
+      map: Assets.textures.get('person_m'),
+      transparent: false,
+      alphaTest: 0.5
+    }),
+    this.personFemaleMaterial = new THREE.MeshBasicMaterial({
+      map: Assets.textures.get('person_f'),
+      transparent: false,
+      alphaTest: 0.5
+    }),
+    this.personGeometry = new THREE.PlaneGeometry(0.2, 1);
     
     for (let i = 0; i < this.personsAmount; i++) {
       const person = new THREE.Mesh(
         this.personGeometry,
-        this.personMaterial
+        Math.random() >= 0.5 ? this.personMaleMaterial : this.personFemaleMaterial
       );
       
-      person.position.set(THREE.MathUtils.randFloat(-5, 5), 0.5, THREE.MathUtils.randFloat(-5, 5));
+      person.position.set(THREE.MathUtils.randFloat(-7.5, 7.5), 0.5, THREE.MathUtils.randFloat(-7.5, 7.5));
 
       this.persons.push(person);
       this.scene.add(person);
@@ -122,15 +133,19 @@ export class Crowd extends BaseScene {
     this.controls.enabled = false;
 
     gsap.to(this.buildingMaterial, { opacity: 0, duration: 1 });
-    return tweenToPromise(this.personMaterial, { opacity: 0, duration: 1 });
+    gsap.to(this.personFemaleMaterial, { opacity: 0, duration: 1 });
+    return tweenToPromise(this.personMaleMaterial, { opacity: 0, duration: 1 });
   }
 
   dispose() {
     this.personGeometry.dispose();
-    this.personMaterial.dispose();
+    this.personMaleMaterial.dispose();
+    this.personFemaleMaterial.dispose();
 
     this.buildingGeometry.dispose();
     this.buildingMaterial.dispose();
+
+    this.floorMaterial.dispose();
 
     this.controls.dispose();
   }

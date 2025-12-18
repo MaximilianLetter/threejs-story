@@ -21,6 +21,8 @@ async function bootstrap() {
   await Promise.all([
     Assets.loadTexture('floor_concrete', '/textures/lined_concrete_1024.jpg'),
     Assets.loadTexture('circle_mask', '/textures/circle_mask_512.png'),
+    Assets.loadTexture('person_m', '/textures/person_m_8_16.png', true),
+    Assets.loadTexture('person_f', '/textures/person_f_8_16.png', true),
   ]);
 
   // Warm up textures
