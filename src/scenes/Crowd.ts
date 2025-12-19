@@ -4,6 +4,7 @@ import { BaseScene } from '../core/BaseScene';
 import { tweenToPromise } from '../utils/gsapPromise';
 import { randomWalk, stopRandomWalk } from '../utils/gsapRandomWalk';
 import { Assets } from '../core/AssetManager';
+import { getLookAtQuaternion } from '../utils/helpers';
 
 export class Crowd extends BaseScene {
   // Initialization
@@ -60,7 +61,7 @@ export class Crowd extends BaseScene {
       this.persons.push(person);
       this.scene.add(person);
 
-      randomWalk(person, { range: 4, durationMin: 2, durationMax: 4 });
+      randomWalk(person, { range: 3, durationMin: 3, durationMax: 4 });
     }
 
     // Buildings
@@ -131,23 +132,45 @@ export class Crowd extends BaseScene {
 
     stopRandomWalk(this.focusObj);
     
-    // Weird pop out effect
-    // this.personFemaleMaterial.transparent = true;
-    // gsap.to(this.personFemaleMaterial, { opacity: 0, duration: 2 });
-    // this.personMaleMaterial.transparent = true;
-    // gsap.to(this.personMaleMaterial, { opacity: 0, duration: 2 });
+    this.fadeOutPixelMaterial(this.personMaleMaterial, 4);
+    this.fadeOutPixelMaterial(this.personFemaleMaterial, 4);
 
     // Interaction is done, dont allow raycasting against other persons
     this.interactionEnabled = false;
 
+    const targetQuat = getLookAtQuaternion(this.camera, this.focusObj.position);
+    gsap.to(this.camera.quaternion, {
+      x: targetQuat.x,
+      y: targetQuat.y,
+      z: targetQuat.z,
+      w: targetQuat.w,
+      duration: 2,
+      ease: 'power2.inOut'
+    });
     gsap.to(this.camera.position, {
-      x: this.focusObj.position.x, y: this.focusObj.position.y, z: this.focusObj.position.z + 2,
+      x: this.focusObj.position.x, y: this.focusObj.position.y, z: this.focusObj.position.z + 1,
       duration: 4,
+      delay: 2,
       ease: 'power2.inOut',
       onUpdate: () => { this.camera.lookAt(this.focusObj!.position ) },
       onComplete: () => { console.log('Focus complete') }
     });
   };
+
+  fadeOutPixelMaterial(mat: THREE.Material, duration: number) {
+    mat.transparent = true;
+    mat.alphaTest = 0;
+    mat.depthWrite = false;
+
+    gsap.to(mat, {
+      opacity: 0,
+      duration: duration,
+      ease: 'power2.out',
+      onComplete: () => {
+        mat.visible = false;
+      }
+    });
+  }
 
   private hover = (e: PointerEvent) => {
     if ( e.isPrimary === false ) return;

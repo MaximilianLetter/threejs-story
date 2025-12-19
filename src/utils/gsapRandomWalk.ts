@@ -29,7 +29,7 @@ export function randomWalk(object: THREE.Object3D, options: WalkOptions = {}) {
 
     const duration = THREE.MathUtils.randFloat(durationMin, durationMax);
 
-    gsap.to(object.position, {
+    object.userData.walkTween = gsap.to(object.position, {
       x: targetX,
       y: targetY,
       z: targetZ,
@@ -44,5 +44,10 @@ export function randomWalk(object: THREE.Object3D, options: WalkOptions = {}) {
 }
 
 export function stopRandomWalk(object: THREE.Object3D) {
-  gsap.killTweensOf(object);
+  const tween = object.userData.walkTween;
+
+  if (tween) {
+    tween.kill();
+    object.userData.walkTween = null;
+  }
 }
