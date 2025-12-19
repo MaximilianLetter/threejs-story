@@ -26,6 +26,7 @@ export class Crowd extends BaseScene {
   private animateInComplete: boolean = false;
   
   // Interaction
+  private cameraBasePosition = new THREE.Vector3(0, 5, 10);
   private mouse = new THREE.Vector2();
   private raycaster = new THREE.Raycaster();
 
@@ -104,16 +105,14 @@ export class Crowd extends BaseScene {
   }
 
   enter(): Promise<void> {
-    const cameraHeight = 5;
-
     // Set position to match lookAt rotation of orbit control later
-    this.camera.position.set(0, cameraHeight, 10);
+    this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     this.camera.position.set(0, 75, 10);
 
     return tweenToPromise(this.camera.position, {
-      y: cameraHeight,
+      y: this.cameraBasePosition.y,
       duration: 2,
       ease: "power3.inOut",
       onComplete:() => {
@@ -241,7 +240,18 @@ export class Crowd extends BaseScene {
   update(dt: number) {
     if (!this.animateInComplete) return;
 
-    if (this.interactionEnabled) this.raycast();
+    if (this.interactionEnabled) {
+      // Mouse based camera offset
+      const targetX = this.cameraBasePosition.x + this.mouse.x;
+      const targetY = this.cameraBasePosition.y + this.mouse.y;
+
+      this.camera.position.x += (targetX - this.camera.position.x) * 0.025;
+      this.camera.position.y += (targetY - this.camera.position.y) * 0.025;
+
+      this.camera.lookAt(0, 0, 0);
+
+      this.raycast();
+    }
   }
 
   exit(): Promise<void> {
