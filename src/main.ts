@@ -35,6 +35,12 @@ async function bootstrap() {
     manager.update(clock.getDelta());
   });
 
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
   // Actual scenes
   await manager.changeScene(new Crowd(camera));
 }
