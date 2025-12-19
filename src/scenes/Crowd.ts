@@ -1,14 +1,11 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BaseScene } from '../core/BaseScene';
 import { tweenToPromise } from '../utils/gsapPromise';
-import { randomWalk } from '../utils/gsapRandomWalk';
+import { randomWalk, stopRandomWalk } from '../utils/gsapRandomWalk';
 import { Assets } from '../core/AssetManager';
 
 export class Crowd extends BaseScene {
-  private controls!: OrbitControls;
-
   // Initialization
   private personsAmount: number = 500;
   // private personMaterial: THREE.Material;
@@ -31,13 +28,13 @@ export class Crowd extends BaseScene {
   private mouse = new THREE.Vector2();
   private raycaster = new THREE.Raycaster();
 
+  private interactionEnabled = false;
+  private highlightedObj?: THREE.Mesh;
+
+  private focusObj: THREE.Mesh | null = null;
+
   constructor(camera: THREE.Camera) {
     super(camera);
-
-    // Camera controls
-    this.controls = new OrbitControls(this.camera, document.body);
-    this.controls.enableDamping = true;
-    this.controls.enableZoom = false;
 
     // Crowd
     this.personMaleMaterial = new THREE.MeshBasicMaterial({
@@ -106,8 +103,6 @@ export class Crowd extends BaseScene {
   }
 
   enter(): Promise<void> {
-    this.controls.enabled = false;
-
     const cameraHeight = 5;
 
     // Set position to match lookAt rotation of orbit control later
@@ -122,42 +117,111 @@ export class Crowd extends BaseScene {
       ease: "power3.inOut",
       onComplete:() => {
         this.animateInComplete = true;
-        this.controls.enabled = true;
         this.enableInteraction();
+
+        this.mouse.set(0, 0); // Set in corner instead of screen center
       }
     });
   }
 
-  private onClick = (event: MouseEvent) => {
-    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  private zoomToPerson = () => {
+    if (!this.highlightedObj || !this.interactionEnabled) return;
 
+    this.focusObj = this.highlightedObj;
+
+    stopRandomWalk(this.focusObj);
+    
+    // Weird pop out effect
+    // this.personFemaleMaterial.transparent = true;
+    // gsap.to(this.personFemaleMaterial, { opacity: 0, duration: 2 });
+    // this.personMaleMaterial.transparent = true;
+    // gsap.to(this.personMaleMaterial, { opacity: 0, duration: 2 });
+
+    // Interaction is done, dont allow raycasting against other persons
+    this.interactionEnabled = false;
+
+    gsap.to(this.camera.position, {
+      x: this.focusObj.position.x, y: this.focusObj.position.y, z: this.focusObj.position.z + 2,
+      duration: 4,
+      ease: 'power2.inOut',
+      onUpdate: () => { this.camera.lookAt(this.focusObj!.position ) },
+      onComplete: () => { console.log('Focus complete') }
+    });
+  };
+
+  private hover = (e: PointerEvent) => {
+    if ( e.isPrimary === false ) return;
+
+    this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  }
+
+  raycast() {
     this.raycaster.setFromCamera(this.mouse, this.camera);
-
     const intersects = this.raycaster.intersectObjects(this.persons, true);
 
     if (intersects.length > 0) {
-      const hit = intersects[0].object;
-      console.log('HIT', hit);
+      const hit = intersects[0];
+      const obj = hit.object;
+
+      if (obj != this.highlightedObj) {
+        // Reset previously highlihted Obj
+        if (this.highlightedObj) {
+          if (this.highlightedObj.userData.uniqueMaterial) {
+            this.highlightedObj.material = this.personMaleMaterial;
+            this.highlightedObj.userData.uniqueMaterial = false;
+          }
+        }
+
+        // Highlight new highlighted Obj
+        if (obj instanceof THREE.Mesh) {
+          if (!obj.userData.uniqueMaterial) {
+            obj.material = obj.material.clone();
+            obj.userData.uniqueMaterial = true;
+          }
+          obj.material.color.set(0xff0000);
+
+          gsap.to(obj.scale, { y: 1.5, x: 1.5, duration: 0.15, onComplete: () => {
+            gsap.to(obj.scale, { y: 1, x: 1.5, duration: 0.15 });
+          }});
+
+          this.highlightedObj = obj;
+        }
+      }
+    } else {
+      // Only reset
+      if (this.highlightedObj) {
+        if (this.highlightedObj.userData.uniqueMaterial) {
+          this.highlightedObj.material = this.personMaleMaterial;
+          this.highlightedObj.userData.uniqueMaterial = false;
+        }
+
+        this.highlightedObj = undefined;
+      }
     }
-  };
+  }
 
   enableInteraction() {
-    window.addEventListener('click', this.onClick);
+    window.addEventListener('pointermove', this.hover);
+    window.addEventListener('click', this.zoomToPerson);
+
+    this.interactionEnabled = true;
   }
 
   disableInteraction() {
-    window.removeEventListener('click', this.onClick)
+    window.removeEventListener('pointermove', this.hover);
+    window.removeEventListener('click', this.zoomToPerson);
+
+    this.interactionEnabled = false;
   }
 
   update(dt: number) {
     if (!this.animateInComplete) return;
 
-    this.controls.update();
+    if (this.interactionEnabled) this.raycast();
   }
 
   exit(): Promise<void> {
-    this.controls.enabled = false;
     this.disableInteraction();
 
     gsap.to(this.buildingMaterial, { opacity: 0, duration: 1 });
@@ -174,7 +238,5 @@ export class Crowd extends BaseScene {
     this.buildingMaterial.dispose();
 
     this.floorMaterial.dispose();
-
-    this.controls.dispose();
   }
 }

@@ -42,3 +42,7 @@ export function randomWalk(object: THREE.Object3D, options: WalkOptions = {}) {
   // Start the first step
   step();
 }
+
+export function stopRandomWalk(object: THREE.Object3D) {
+  gsap.killTweensOf(object);
+}
