@@ -26,6 +26,10 @@ export class Crowd extends BaseScene {
 
   // Transition
   private animateInComplete: boolean = false;
+  
+  // Interaction
+  private mouse = new THREE.Vector2();
+  private raycaster = new THREE.Raycaster();
 
   constructor(camera: THREE.Camera) {
     super(camera);
@@ -119,8 +123,31 @@ export class Crowd extends BaseScene {
       onComplete:() => {
         this.animateInComplete = true;
         this.controls.enabled = true;
+        this.enableInteraction();
       }
     });
+  }
+
+  private onClick = (event: MouseEvent) => {
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    const intersects = this.raycaster.intersectObjects(this.persons, true);
+
+    if (intersects.length > 0) {
+      const hit = intersects[0].object;
+      console.log('HIT', hit);
+    }
+  };
+
+  enableInteraction() {
+    window.addEventListener('click', this.onClick);
+  }
+
+  disableInteraction() {
+    window.removeEventListener('click', this.onClick)
   }
 
   update(dt: number) {
@@ -131,6 +158,7 @@ export class Crowd extends BaseScene {
 
   exit(): Promise<void> {
     this.controls.enabled = false;
+    this.disableInteraction();
 
     gsap.to(this.buildingMaterial, { opacity: 0, duration: 1 });
     gsap.to(this.personFemaleMaterial, { opacity: 0, duration: 1 });
