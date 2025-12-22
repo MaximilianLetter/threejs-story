@@ -50,6 +50,7 @@ export class Crowd extends BaseScene {
       alphaTest: 0.5
     }),
     this.personGeometry = new THREE.PlaneGeometry(0.2, 1);
+    this.personGeometry.translate(0, 0.5, 0);
     
     for (let i = 0; i < this.personsAmount; i++) {
       const person = new THREE.Mesh(
@@ -134,10 +135,15 @@ export class Crowd extends BaseScene {
     this.fadeOutPixelMaterial(this.personMaleMaterial, 4);
     this.fadeOutPixelMaterial(this.personFemaleMaterial, 4);
 
+    this.fadeOutPixelMaterial(this.buildingMaterial, 6);
+    this.fadeOutPixelMaterial(this.floorMaterial, 6);
+
     // Interaction is done, dont allow raycasting against other persons
     this.interactionEnabled = false;
+    
+    const targetPos = this.focusObj.localToWorld(new THREE.Vector3(0, 0.5, 0));
+    const targetQuat = getLookAtQuaternion(this.camera, targetPos);
 
-    const targetQuat = getLookAtQuaternion(this.camera, this.focusObj.position);
     gsap.to(this.camera.quaternion, {
       x: targetQuat.x,
       y: targetQuat.y,
@@ -147,11 +153,11 @@ export class Crowd extends BaseScene {
       ease: 'power2.inOut'
     });
     gsap.to(this.camera.position, {
-      x: this.focusObj.position.x, y: this.focusObj.position.y, z: this.focusObj.position.z + 1,
+      x: targetPos.x, y: targetPos.y, z: targetPos.z + 1,
       duration: 4,
       delay: 2,
       ease: 'power2.inOut',
-      onUpdate: () => { this.camera.lookAt(this.focusObj!.position ) },
+      onUpdate: () => { this.camera.lookAt(targetPos) },
       onComplete: () => { console.log('Focus complete') }
     });
   };
@@ -190,7 +196,7 @@ export class Crowd extends BaseScene {
         // Reset previously highlihted Obj
         if (this.highlightedObj) {
           if (this.highlightedObj.userData.uniqueMaterial) {
-            this.highlightedObj.material = this.personMaleMaterial;
+            this.highlightedObj.material = this.highlightedObj.userData.ogMat;
             this.highlightedObj.userData.uniqueMaterial = false;
           }
         }
@@ -198,10 +204,11 @@ export class Crowd extends BaseScene {
         // Highlight new highlighted Obj
         if (obj instanceof THREE.Mesh) {
           if (!obj.userData.uniqueMaterial) {
+            obj.userData.ogMat = obj.material;
             obj.material = obj.material.clone();
             obj.userData.uniqueMaterial = true;
           }
-          obj.material.color.set(0xff0000);
+          obj.material.color.copy(this.generateRandomColor());
 
           gsap.to(obj.scale, { y: 1.5, x: 1.5, duration: 0.15, onComplete: () => {
             gsap.to(obj.scale, { y: 1, x: 1.5, duration: 0.15 });
@@ -214,13 +221,24 @@ export class Crowd extends BaseScene {
       // Only reset
       if (this.highlightedObj) {
         if (this.highlightedObj.userData.uniqueMaterial) {
-          this.highlightedObj.material = this.personMaleMaterial;
+          this.highlightedObj.material = this.highlightedObj.userData.ogMat;
           this.highlightedObj.userData.uniqueMaterial = false;
         }
 
         this.highlightedObj = undefined;
       }
     }
+  }
+
+  generateRandomColor(): THREE.Color {
+    const color = new THREE.Color();
+    color.setHSL(
+      Math.random(),
+      0.8,
+      0.6
+    );
+
+    return color;
   }
 
   enableInteraction() {
