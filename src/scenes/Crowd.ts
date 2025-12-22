@@ -57,6 +57,7 @@ export class Crowd extends BaseScene {
         this.personGeometry,
         Math.random() >= 0.5 ? this.personMaleMaterial : this.personFemaleMaterial
       );
+      this.setupHoverAnimation(person);
       
       person.position.set(THREE.MathUtils.randFloat(-7.5, 7.5), 0.5, THREE.MathUtils.randFloat(-7.5, 7.5));
 
@@ -144,22 +145,22 @@ export class Crowd extends BaseScene {
     const targetPos = this.focusObj.localToWorld(new THREE.Vector3(0, 0.5, 0));
     const targetQuat = getLookAtQuaternion(this.camera, targetPos);
 
-    gsap.to(this.camera.quaternion, {
-      x: targetQuat.x,
-      y: targetQuat.y,
-      z: targetQuat.z,
-      w: targetQuat.w,
-      duration: 2,
-      ease: 'power2.inOut'
-    });
-    gsap.to(this.camera.position, {
-      x: targetPos.x, y: targetPos.y, z: targetPos.z + 1,
-      duration: 4,
-      delay: 2,
-      ease: 'power2.inOut',
-      onUpdate: () => { this.camera.lookAt(targetPos) },
-      onComplete: () => { console.log('Focus complete') }
-    });
+    gsap.timeline()
+      .to(this.camera.quaternion, {
+        x: targetQuat.x,
+        y: targetQuat.y,
+        z: targetQuat.z,
+        w: targetQuat.w,
+        duration: 2,
+        ease: 'power2.inOut'
+      })
+      .to(this.camera.position, {
+        x: targetPos.x, y: targetPos.y, z: targetPos.z + 1,
+        duration: 4,
+        ease: 'power2.inOut',
+        onUpdate: () => { this.camera.lookAt(targetPos) },
+        onComplete: () => { console.log('Focus complete') }
+      });
   };
 
   fadeOutPixelMaterial(mat: THREE.Material, duration: number) {
@@ -210,9 +211,8 @@ export class Crowd extends BaseScene {
           }
           obj.material.color.copy(this.generateRandomColor());
 
-          gsap.to(obj.scale, { y: 1.5, x: 1.5, duration: 0.15, onComplete: () => {
-            gsap.to(obj.scale, { y: 1, x: 1.5, duration: 0.15 });
-          }});
+          // Play hover animation
+          obj.userData.hoverTl.restart();
 
           this.highlightedObj = obj;
         }
@@ -239,6 +239,24 @@ export class Crowd extends BaseScene {
     );
 
     return color;
+  }
+
+  setupHoverAnimation(obj: THREE.Object3D) {
+    if (obj.userData.hoverTl) return;
+
+    obj.userData.hoverTl = gsap.timeline({ paused: true })
+      .to(obj.scale, {
+        x: 1.25,
+        y: 1.25,
+        duration: 0.125,
+        ease: 'power2.inOut',
+      })
+      .to(obj.scale, {
+        x: 1,
+        y: 1,
+        duration: 0.125,
+        ease: 'power2.inOut',
+      });
   }
 
   enableInteraction() {
