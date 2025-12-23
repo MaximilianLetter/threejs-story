@@ -189,18 +189,25 @@ export class Crowd extends BaseScene {
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(this.persons, true);
 
+    // Reset function
+    const resetHighlight = () => {
+      if (this.highlightedObj) {
+        if (this.highlightedObj.userData.uniqueMaterial) {
+          this.highlightedObj.material = this.highlightedObj.userData.ogMat;
+          this.highlightedObj.userData.uniqueMaterial = false;
+        }
+
+        this.highlightedObj = undefined;
+      }
+    }
+
     if (intersects.length > 0) {
       const hit = intersects[0];
       const obj = hit.object;
 
       if (obj != this.highlightedObj) {
-        // Reset previously highlihted Obj
-        if (this.highlightedObj) {
-          if (this.highlightedObj.userData.uniqueMaterial) {
-            this.highlightedObj.material = this.highlightedObj.userData.ogMat;
-            this.highlightedObj.userData.uniqueMaterial = false;
-          }
-        }
+        // Reset previously highlighted Obj
+        resetHighlight();
 
         // Highlight new highlighted Obj
         if (obj instanceof THREE.Mesh) {
@@ -219,14 +226,7 @@ export class Crowd extends BaseScene {
       }
     } else {
       // Only reset
-      if (this.highlightedObj) {
-        if (this.highlightedObj.userData.uniqueMaterial) {
-          this.highlightedObj.material = this.highlightedObj.userData.ogMat;
-          this.highlightedObj.userData.uniqueMaterial = false;
-        }
-
-        this.highlightedObj = undefined;
-      }
+      resetHighlight();
     }
   }
 
