@@ -121,7 +121,7 @@ export class Crowd extends BaseScene {
         this.animateInComplete = true;
         this.enableInteraction();
 
-        this.mouse.set(0, 0); // Set in corner instead of screen center
+        this.mouse.set(-1, 1); // Set in corner instead of screen center
       }
     });
   }
