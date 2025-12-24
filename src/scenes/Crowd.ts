@@ -32,6 +32,8 @@ export class Crowd extends BaseScene {
 
   private interactionEnabled = false;
   private highlightedObj?: THREE.Mesh;
+  private selectedPersons: THREE.Mesh[] = [];
+  private amountOfPersonsToSelect: number = 3;
 
   private focusObj: THREE.Mesh | null = null;
 
@@ -60,6 +62,15 @@ export class Crowd extends BaseScene {
       this.setupHoverAnimation(person);
       
       person.position.set(THREE.MathUtils.randFloat(-7.5, 7.5), 0.5, THREE.MathUtils.randFloat(-7.5, 7.5));
+
+      // Mark person as colored or not
+      const everyNthPerson = 5;
+      if (i % everyNthPerson === 0) {
+        person.userData.special = true;
+        person.userData.specialColor = this.generateRandomColor();
+      } else {
+        person.userData.special = false;
+      }
 
       this.persons.push(person);
       this.scene.add(person);
@@ -126,18 +137,52 @@ export class Crowd extends BaseScene {
     });
   }
 
-  private zoomToPerson = () => {
+  // NOTE: this syntax is required for adding it to event listeners
+  private selectPerson = () => {
+    const obj = this.highlightedObj;
+
+    if (!obj || !this.interactionEnabled) return;
+
+    // NOTE: if unspecial, maybe show text about only selecting persons
+    // that do stand out of the crowd
+    if (!obj.userData.special) return;
+
+    if (this.selectedPersons.includes(obj)) return;
+      stopRandomWalk(obj);
+
+      // NOTE: adding to array keeps the object from losing its color again
+      this.selectedPersons.push(obj);
+
+      if (this.selectedPersons.length >= 3) {
+        this.zoomToPerson();
+      }
+  }
+
+  zoomToPerson() {
     if (!this.highlightedObj || !this.interactionEnabled) return;
 
     this.focusObj = this.highlightedObj;
 
     stopRandomWalk(this.focusObj);
-    
-    this.fadeOutPixelMaterial(this.personMaleMaterial, 4);
-    this.fadeOutPixelMaterial(this.personFemaleMaterial, 4);
 
-    this.fadeOutPixelMaterial(this.buildingMaterial, 6);
-    this.fadeOutPixelMaterial(this.floorMaterial, 6);
+    // Timeline for effect animation
+    
+    const tl = gsap.timeline();
+    
+    tl.add(this.fadeOutMaterial(this.personMaleMaterial, 2));
+    tl.add(this.fadeOutMaterial(this.personFemaleMaterial, 2), '<');
+
+    if (this.selectedPersons.length) {
+      // Fade out everything except the last one
+      for (let i = 0; i < this.selectedPersons.length - 1; i++) {
+        const m = this.selectedPersons[i].material as THREE.Material;
+
+        tl.add(this.fadeOutMaterial(m, 1))
+      }
+    }
+    
+    tl.add(this.fadeOutMaterial(this.buildingMaterial, 2));
+    tl.add(this.fadeOutMaterial(this.floorMaterial, 2), '<');
 
     // Interaction is done, dont allow raycasting against other persons
     this.interactionEnabled = false;
@@ -146,29 +191,29 @@ export class Crowd extends BaseScene {
     const targetQuat = getLookAtQuaternion(this.camera, targetPos);
 
     gsap.timeline()
-      .to(this.camera.quaternion, {
+      .add(gsap.to(this.camera.quaternion, {
         x: targetQuat.x,
         y: targetQuat.y,
         z: targetQuat.z,
         w: targetQuat.w,
         duration: 2,
         ease: 'power2.inOut'
-      })
-      .to(this.camera.position, {
+      }), '<')
+      .add(gsap.to(this.camera.position, {
         x: targetPos.x, y: targetPos.y, z: targetPos.z + 1,
         duration: 4,
         ease: 'power2.inOut',
         onUpdate: () => { this.camera.lookAt(targetPos) },
         onComplete: () => { console.log('Focus complete') }
-      });
+      }));
   };
 
-  fadeOutPixelMaterial(mat: THREE.Material, duration: number) {
+  fadeOutMaterial(mat: THREE.Material, duration: number) {
     mat.transparent = true;
     mat.alphaTest = 0;
     mat.depthWrite = false;
 
-    gsap.to(mat, {
+    return gsap.to(mat, {
       opacity: 0,
       duration: duration,
       ease: 'power2.out',
@@ -192,6 +237,9 @@ export class Crowd extends BaseScene {
     // Reset function
     const resetHighlight = () => {
       if (this.highlightedObj) {
+        // If person was selected, it shall stay highlighted 
+        if (this.selectedPersons.includes(this.highlightedObj)) return;
+
         if (this.highlightedObj.userData.uniqueMaterial) {
           this.highlightedObj.material = this.highlightedObj.userData.ogMat;
           this.highlightedObj.userData.uniqueMaterial = false;
@@ -216,7 +264,9 @@ export class Crowd extends BaseScene {
             obj.material = obj.material.clone();
             obj.userData.uniqueMaterial = true;
           }
-          obj.material.color.copy(this.generateRandomColor());
+
+          // Give color if special
+          if (obj.userData.special) obj.material.color.copy(obj.userData.specialColor);
 
           // Play hover animation
           obj.userData.hoverTl.restart();
@@ -261,14 +311,14 @@ export class Crowd extends BaseScene {
 
   enableInteraction() {
     window.addEventListener('pointermove', this.hover);
-    window.addEventListener('click', this.zoomToPerson);
+    window.addEventListener('click', this.selectPerson);
 
     this.interactionEnabled = true;
   }
 
   disableInteraction() {
     window.removeEventListener('pointermove', this.hover);
-    window.removeEventListener('click', this.zoomToPerson);
+    window.removeEventListener('click', this.selectPerson);
 
     this.interactionEnabled = false;
   }
