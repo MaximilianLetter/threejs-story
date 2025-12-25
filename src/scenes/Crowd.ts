@@ -102,7 +102,7 @@ export class Crowd extends BaseScene {
     });
 
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 20),
+      new THREE.PlaneGeometry(24, 24),
       this.floorMaterial
     );
     floor.rotation.x = -Math.PI / 2;
@@ -176,7 +176,7 @@ export class Crowd extends BaseScene {
       for (let i = 0; i < this.selectedPersons.length - 1; i++) {
         const m = this.selectedPersons[i].material as THREE.Material;
 
-        tl.add(this.fadeOutMaterial(m, 1))
+        tl.add(this.fadeOutMaterial(m, 2), '<0.5');
       }
     }
     
