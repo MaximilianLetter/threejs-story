@@ -5,6 +5,21 @@ import { tweenToPromise } from '../utils/gsapPromise';
 import { randomWalk, stopRandomWalk } from '../utils/gsapRandomWalk';
 import { Assets } from '../core/AssetManager';
 import { getLookAtQuaternion } from '../utils/helpers';
+import { AudioManager } from '../audio/AudioManager';
+import { SoundIds } from '../audio/SoundIds';
+
+// TODO:
+// -> every person is animated on hover, some do have color -> find the colorful ones (3pieces e.g.)
+// "Everyday we see a lot of people. An aweful lot of people."
+// "Some do stand out to us. Who stands out to you?"
+// "Who else strikes your attention?" 2/3
+// finding colored person -> click it -> it reduces the amount of people, the selected one stands still 
+// finding the third one -> zoom into it -> "Some people, we ask ourselves, who are they?"
+// alt: with time -> reduce amount of persons
+
+// TODO mute on leaving window
+// lower volume on fewer people
+// fade out sound on zoom in
 
 export class Crowd extends BaseScene {
   // Initialization
@@ -37,8 +52,8 @@ export class Crowd extends BaseScene {
 
   private focusObj: THREE.Mesh | null = null;
 
-  constructor(camera: THREE.Camera) {
-    super(camera);
+  constructor(camera: THREE.Camera, audio: AudioManager) {
+    super(camera, audio);
 
     // Crowd
     this.personMaleMaterial = new THREE.MeshBasicMaterial({
@@ -96,7 +111,7 @@ export class Crowd extends BaseScene {
 
     // Floor
     this.floorMaterial = new THREE.MeshStandardMaterial({
-      map: Assets.textures.get('floor_concrete'),
+      map: Assets.textures.get('crossroad'),
       alphaMap: Assets.textures.get('circle_mask'),
       transparent: true
     });
@@ -122,6 +137,8 @@ export class Crowd extends BaseScene {
     this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
+    this.audio.play(SoundIds.CROWD_AMBIENT, { loop: true });
+
     this.camera.position.set(0, 75, 10);
 
     return tweenToPromise(this.camera.position, {
@@ -145,17 +162,22 @@ export class Crowd extends BaseScene {
 
     // NOTE: if unspecial, maybe show text about only selecting persons
     // that do stand out of the crowd
-    if (!obj.userData.special) return;
+    if (!obj.userData.special) {
+      this.audio.play(SoundIds.SELECT_FAIL);
+      return;
+    }
 
     if (this.selectedPersons.includes(obj)) return;
-      stopRandomWalk(obj);
 
-      // NOTE: adding to array keeps the object from losing its color again
-      this.selectedPersons.push(obj);
+    this.audio.play(SoundIds.SELECT);
+    stopRandomWalk(obj);
 
-      if (this.selectedPersons.length >= this.amountOfPersonsToSelect) {
-        this.zoomToPerson();
-      }
+    // NOTE: adding to array keeps the object from losing its color again
+    this.selectedPersons.push(obj);
+
+    if (this.selectedPersons.length >= this.amountOfPersonsToSelect) {
+      this.zoomToPerson();
+    }
   }
 
   zoomToPerson() {
