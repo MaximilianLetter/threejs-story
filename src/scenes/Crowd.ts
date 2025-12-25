@@ -51,7 +51,7 @@ export class Crowd extends BaseScene {
       transparent: false,
       alphaTest: 0.5
     }),
-    this.personGeometry = new THREE.PlaneGeometry(0.2, 1);
+    this.personGeometry = new THREE.PlaneGeometry(0.4, 1);
     this.personGeometry.translate(0, 0.5, 0);
     
     for (let i = 0; i < this.personsAmount; i++) {
@@ -153,7 +153,7 @@ export class Crowd extends BaseScene {
       // NOTE: adding to array keeps the object from losing its color again
       this.selectedPersons.push(obj);
 
-      if (this.selectedPersons.length >= 3) {
+      if (this.selectedPersons.length >= this.amountOfPersonsToSelect) {
         this.zoomToPerson();
       }
   }
@@ -166,7 +166,6 @@ export class Crowd extends BaseScene {
     stopRandomWalk(this.focusObj);
 
     // Timeline for effect animation
-    
     const tl = gsap.timeline();
     
     tl.add(this.fadeOutMaterial(this.personMaleMaterial, 2));
@@ -190,8 +189,7 @@ export class Crowd extends BaseScene {
     const targetPos = this.focusObj.localToWorld(new THREE.Vector3(0, 0.5, 0));
     const targetQuat = getLookAtQuaternion(this.camera, targetPos);
 
-    gsap.timeline()
-      .add(gsap.to(this.camera.quaternion, {
+    tl.add(gsap.to(this.camera.quaternion, {
         x: targetQuat.x,
         y: targetQuat.y,
         z: targetQuat.z,

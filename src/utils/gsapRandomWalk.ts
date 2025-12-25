@@ -22,6 +22,8 @@ export function randomWalk(object: THREE.Object3D, options: WalkOptions = {}) {
   // store the original position as center
   const origin = object.position.clone();
 
+  startJiggle(object);
+
   function step() {
     const targetX = origin.x + THREE.MathUtils.randFloatSpread(range * 2);
     const targetY = options.allowY ? origin.y + THREE.MathUtils.randFloatSpread(range * 2) : origin.y;
@@ -49,5 +51,40 @@ export function stopRandomWalk(object: THREE.Object3D) {
   if (tween) {
     tween.kill();
     object.userData.walkTween = null;
+    stopJiggle(object);
+  }
+}
+
+function startJiggle(object: THREE.Object3D) {
+  if (object.userData.jiggleTl) return;
+
+  const baseAmp = THREE.MathUtils.randFloat(0.03, 0.07);
+  const phase = Math.random();
+
+  const tl = gsap.timeline({
+    repeat: -1,
+    yoyo: true,
+    delay: phase * 0.4, // Phase offset
+  });
+
+  tl.to(object.rotation, {
+    z: baseAmp,
+    duration: 0.25,
+    ease: 'sine.inOut',
+  }).to(object.rotation, {
+    z: -baseAmp,
+    duration: 0.25,
+    ease: 'sine.inOut',
+  });
+
+  object.userData.jiggleTl = tl;
+}
+
+function stopJiggle(object: THREE.Object3D) {
+  const tl = object.userData.jiggleTl;
+  if (tl) {
+    tl.kill();
+    object.rotation.z = 0;
+    object.userData.jiggleTl = null;
   }
 }
