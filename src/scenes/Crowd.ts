@@ -137,7 +137,7 @@ export class Crowd extends BaseScene {
     this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-    this.audio.play(SoundIds.CROWD_AMBIENT, { loop: true, reference: 'ambient' });
+    this.audio.play(SoundIds.CROWD_AMBIENT, { volume: 0.1, loop: true, reference: 'ambient' });
 
     this.camera.position.set(0, 75, 10);
 

@@ -44,8 +44,12 @@ export class AudioManager {
       ? new THREE.PositionalAudio(this.listener)
       : new THREE.Audio(this.listener);
 
+    // NOTE: THREE.js does not hold value and does not return it correctly with getVolume()
+    const initialVolume =
+      (options.volume ?? 1) * this.sfxVolume * this.masterVolume;
+
     sound.setBuffer(buffer);
-    sound.setVolume((options.volume ?? 1) * this.sfxVolume * this.masterVolume);
+    sound.setVolume(initialVolume);
     sound.setLoop(!!options.loop);
 
     if (options.position) {
@@ -55,12 +59,12 @@ export class AudioManager {
     } else if (options.reference) {
       if (options.reference === 'music') {
         this.ref.music = sound as THREE.Audio;
-        this.volumeProxy.music = sound.getVolume();
+        this.volumeProxy.music = initialVolume;
       }
 
       if (options.reference === 'ambient') {
         this.ref.ambient = sound as THREE.Audio;
-        this.volumeProxy.ambient = sound.getVolume();
+        this.volumeProxy.ambient = initialVolume;
       }
     }
 
@@ -71,7 +75,7 @@ export class AudioManager {
     let audio = ref === 'music' ? this.ref.music : this.ref.ambient;
     
     // Defensive return of no-op tween that does nothing
-    if (!audio) return gsap.delayedCall(0, () => {});;
+    if (!audio) return gsap.delayedCall(0, () => {});
 
     return gsap.to(this.volumeProxy, {
       [ref]: target,
@@ -81,7 +85,7 @@ export class AudioManager {
         audio.setVolume(this.volumeProxy[ref]);
       },
       onComplete: () => {
-        // Only stop audio if fade to zero
+        // Only stop audio if fades to zero
         if (target === 0) {
           audio.stop();
           if (ref === 'music') this.ref.music = undefined;
