@@ -10,6 +10,9 @@ export class AudioManager {
   sfxVolume = 1;
   musicVolume = 0.7;
 
+  private isMuted = false;
+  private previousMasterVolume = 1;
+
   private ref: {
     music?: THREE.Audio,
     ambient?: THREE.Audio,
@@ -25,6 +28,8 @@ export class AudioManager {
     this.listener = new THREE.AudioListener();
     camera.add(this.listener);
     this.context = this.listener.context;
+
+    this.addEventListeners();
   }
 
   setBuffer(id: string, buffer: AudioBuffer) {
@@ -93,5 +98,53 @@ export class AudioManager {
         }
       }
     })
+  }
+
+  muteAll() {
+    if (this.isMuted) return;
+
+    this.previousMasterVolume = this.masterVolume;
+    this.masterVolume = 0;
+
+    this.applyMasterVolume();
+    this.isMuted = true;
+  }
+
+  unmuteAll() {
+    if (!this.isMuted) return;
+
+    this.masterVolume = this.previousMasterVolume;
+    this.applyMasterVolume();
+    this.isMuted = false;
+  }
+
+  private applyMasterVolume() {
+    if (this.ref.music) {
+      this.ref.music.setVolume(this.volumeProxy.music * this.masterVolume);
+    }
+
+    if (this.ref.ambient) {
+      this.ref.ambient.setVolume(this.volumeProxy.ambient * this.masterVolume);
+    }
+  }
+
+  addEventListeners() {
+    window.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.muteAll();
+      } else {
+        this.unmuteAll();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      this.muteAll();
+    });
+
+    window.addEventListener('focus', () => {
+      this.unmuteAll();
+    });
+
+    console.log('Audio manager event listeners added.')
   }
 }

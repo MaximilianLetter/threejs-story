@@ -17,10 +17,6 @@ import { SoundIds } from '../audio/SoundIds';
 // finding the third one -> zoom into it -> "Some people, we ask ourselves, who are they?"
 // alt: with time -> reduce amount of persons
 
-// TODO mute on leaving window
-// lower volume on fewer people
-// fade out sound on zoom in
-
 export class Crowd extends BaseScene {
   // Initialization
   private personsAmount: number = 500;
