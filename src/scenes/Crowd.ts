@@ -137,7 +137,7 @@ export class Crowd extends BaseScene {
     this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-    this.audio.play(SoundIds.CROWD_AMBIENT, { loop: true });
+    this.audio.play(SoundIds.CROWD_AMBIENT, { loop: true, reference: 'ambient' });
 
     this.camera.position.set(0, 75, 10);
 
@@ -190,7 +190,8 @@ export class Crowd extends BaseScene {
     // Timeline for effect animation
     const tl = gsap.timeline();
     
-    tl.add(this.fadeOutMaterial(this.personMaleMaterial, 2));
+    tl.add(this.audio.fadeVolume('ambient', 2, 0));
+    tl.add(this.fadeOutMaterial(this.personMaleMaterial, 2), '<');
     tl.add(this.fadeOutMaterial(this.personFemaleMaterial, 2), '<');
 
     if (this.selectedPersons.length) {
