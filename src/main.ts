@@ -18,17 +18,19 @@ async function bootstrap() {
 
   const audioManager = new AudioManager(camera);
   const textManager = new TextManager();
-  // const sceneManager = new SceneManager(renderer, camera);
-  const ctx: SceneContext = {
+  
+  // NOTE: context without functions bound to it, this is done in
+  // the SceneManager constructor
+  const ctxBase = {
     camera: camera,
     audio: audioManager,
     text: textManager,
   };
 
-  const sceneManager = new SceneManager(renderer, ctx);
+  const sceneManager = new SceneManager(renderer, ctxBase);
 
   // Loading Scene
-  await sceneManager.changeScene(Intro);
+  await sceneManager.changeScene(new Intro(sceneManager.getContext()));
 
   await Promise.all([
     Assets.loadTexture('crossroad', '/textures/crossroads_1024.png'),
@@ -56,13 +58,9 @@ async function bootstrap() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  // TODO: needs to click in into scene after loading is done -> start game
   window.addEventListener('pointerdown', () => {
     audioManager.listener.context.resume();
   }, { once: true });
-
-  // Actual scenes
-  await sceneManager.changeScene(Crowd);
 }
 
 bootstrap();
