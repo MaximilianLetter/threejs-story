@@ -40,6 +40,15 @@ export class Crowd extends BaseScene {
 
   private focusObj: THREE.Mesh | null = null;
 
+  private story = {
+    step: 0,
+    lastStepTime: 0,
+    stepDelay: 0
+  }
+  // 0 -> intro
+  // 1 -> instruction 1
+  // 2 -> instruction 2
+
   constructor(ctx: SceneContext) {
     super(ctx);
 
@@ -120,7 +129,7 @@ export class Crowd extends BaseScene {
     console.log('CROWD SCENE STARTED');
   }
 
-  async enter(): Promise<void> {
+  enter(): Promise<void> {
     // Set position to match lookAt rotation of orbit control later
     this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -142,6 +151,9 @@ export class Crowd extends BaseScene {
         this.enableInteraction();
 
         this.mouse.set(-1, 1); // Set in corner instead of screen center
+
+        this.story.step = 1;
+        this.story.lastStepTime = Date.now();
       }
     }), '-=1.5');
 
@@ -171,6 +183,12 @@ export class Crowd extends BaseScene {
 
     if (this.selectedPersons.length >= this.amountOfPersonsToSelect) {
       this.zoomToPerson();
+    } else {
+      if (this.story.step === 2 && this.nextStoryStepTime()) {
+        this.text.showText('top', TextContent.crowd.instruction2, 1, 3);
+        this.story.step++;
+        this.story.lastStepTime = Date.now();
+      }
     }
   }
 
@@ -220,7 +238,8 @@ export class Crowd extends BaseScene {
         ease: 'power2.inOut',
         onUpdate: () => { this.camera.lookAt(targetPos) },
         onComplete: () => { console.log('Focus complete') }
-      }));
+      }))
+      .add(this.text.showText('top', TextContent.crowd.leave, 1, 3), '<-2');
   };
 
   fadeOutMaterial(mat: THREE.Material, duration: number) {
@@ -287,6 +306,12 @@ export class Crowd extends BaseScene {
           obj.userData.hoverTl.restart();
 
           this.highlightedObj = obj;
+
+          if (this.story.step === 1 && this.nextStoryStepTime()) {
+            this.text.showText('top', TextContent.crowd.instruction1, 1, 3);
+            this.story.step++;
+            this.story.lastStepTime = Date.now();
+          }
         }
       }
     } else {
@@ -304,6 +329,10 @@ export class Crowd extends BaseScene {
     );
 
     return color;
+  }
+
+  nextStoryStepTime() {
+    return this.story.lastStepTime + this.story.stepDelay < Date.now();
   }
 
   setupHoverAnimation(obj: THREE.Object3D) {
