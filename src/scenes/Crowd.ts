@@ -1,21 +1,13 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { BaseScene } from '../core/BaseScene';
-import { tweenToPromise } from '../utils/gsapPromise';
+import { timelineToPromise, tweenToPromise } from '../utils/gsapPromise';
 import { randomWalk, stopRandomWalk } from '../utils/gsapRandomWalk';
 import { Assets } from '../core/AssetManager';
 import { getLookAtQuaternion } from '../utils/helpers';
-import { AudioManager } from '../audio/AudioManager';
 import { SoundIds } from '../audio/SoundIds';
-
-// TODO:
-// -> every person is animated on hover, some do have color -> find the colorful ones (3pieces e.g.)
-// "Everyday we see a lot of people. An aweful lot of people."
-// "Some do stand out to us. Who stands out to you?"
-// "Who else strikes your attention?" 2/3
-// finding colored person -> click it -> it reduces the amount of people, the selected one stands still 
-// finding the third one -> zoom into it -> "Some people, we ask ourselves, who are they?"
-// alt: with time -> reduce amount of persons
+import { SceneContext } from '../core/SceneManager';
+import TextContent from '../ui/TextContents.json';
 
 export class Crowd extends BaseScene {
   // Initialization
@@ -48,8 +40,8 @@ export class Crowd extends BaseScene {
 
   private focusObj: THREE.Mesh | null = null;
 
-  constructor(camera: THREE.Camera, audio: AudioManager) {
-    super(camera, audio);
+  constructor(ctx: SceneContext) {
+    super(ctx);
 
     // Crowd
     this.personMaleMaterial = new THREE.MeshBasicMaterial({
@@ -128,7 +120,7 @@ export class Crowd extends BaseScene {
     console.log('CROWD SCENE STARTED');
   }
 
-  enter(): Promise<void> {
+  async enter(): Promise<void> {
     // Set position to match lookAt rotation of orbit control later
     this.camera.position.copy(this.cameraBasePosition);
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -137,7 +129,11 @@ export class Crowd extends BaseScene {
 
     this.camera.position.set(0, 75, 10);
 
-    return tweenToPromise(this.camera.position, {
+    const tl = gsap.timeline();
+
+    tl.add(this.text.showText('top', TextContent.crowd.enter1, 1, 3));
+    tl.add(this.text.showText('top', TextContent.crowd.enter2, 1, 3));
+    tl.add(gsap.to(this.camera.position, {
       y: this.cameraBasePosition.y,
       duration: 2,
       ease: "power3.inOut",
@@ -147,7 +143,9 @@ export class Crowd extends BaseScene {
 
         this.mouse.set(-1, 1); // Set in corner instead of screen center
       }
-    });
+    }), '-=1.5');
+
+    return timelineToPromise(tl);
   }
 
   // NOTE: this syntax is required for adding it to event listeners

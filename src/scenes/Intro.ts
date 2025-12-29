@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { BaseScene } from '../core/BaseScene';
 import { tweenToPromise } from '../utils/gsapPromise';
-import { AudioManager } from '../audio/AudioManager';
+import { SceneContext } from '../core/SceneManager';
 
 export class Intro extends BaseScene {
   private cubeMaterial: THREE.Material;
   private cube!: THREE.Mesh;
 
-  constructor(camera: THREE.Camera, audio: AudioManager) {
-    super(camera, audio);
+  constructor(ctx: SceneContext) {
+    super(ctx);
 
     this.cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true });
     this.cube = new THREE.Mesh(

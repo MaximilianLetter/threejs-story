@@ -3,7 +3,61 @@ body {
   overflow: hidden;
 }
 
-
 canvas {
   display: block;
+}
+
+.ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .textBlock {
+    position: absolute;
+    max-width: 80%;
+    margin: 0;
+    text-align: center;
+
+    font-family: sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+    opacity: 0;
+    transform: translateY(10px);
+    will-change: opacity, transform;
+
+    // NOTE: alternatively use CSS transitions
+    // transition: opacity 0.3s ease, transform 0.3s ease;
+
+    &.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    &#textTop {
+      top: 8%;
+    }
+
+    &#textCenter {
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    &#textBottom {
+      bottom: 8%;
+    }
+
+    &#textFlexible {
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
 }

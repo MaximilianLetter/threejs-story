@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { SceneManager } from './core/SceneManager.ts';
+import { SceneContext, SceneManager } from './core/SceneManager.ts';
 import { Assets } from './core/AssetManager.ts';
 import { Intro } from './scenes/Intro.ts';
 import { Outro } from './scenes/Outro.ts';
 import { Crowd } from './scenes/Crowd.ts';
 import { AudioManager } from './audio/AudioManager.ts';
 import { loadAudio } from './audio/AudioLoader.ts';
+import { TextManager } from './ui/TextManager.ts';
 
 async function bootstrap() {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -15,11 +16,19 @@ async function bootstrap() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  const manager = new SceneManager(renderer, camera);
   const audioManager = new AudioManager(camera);
+  const textManager = new TextManager();
+  // const sceneManager = new SceneManager(renderer, camera);
+  const ctx: SceneContext = {
+    camera: camera,
+    audio: audioManager,
+    text: textManager,
+  };
+
+  const sceneManager = new SceneManager(renderer, ctx);
 
   // Loading Scene
-  await manager.changeScene(new Intro(camera, audioManager));
+  await sceneManager.changeScene(Intro);
 
   await Promise.all([
     Assets.loadTexture('crossroad', '/textures/crossroads_1024.png'),
@@ -38,7 +47,7 @@ async function bootstrap() {
 
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
-    manager.update(clock.getDelta());
+    sceneManager.update(clock.getDelta());
   });
 
   window.addEventListener('resize', () => {
@@ -53,7 +62,7 @@ async function bootstrap() {
   }, { once: true });
 
   // Actual scenes
-  await manager.changeScene(new Crowd(camera, audioManager));
+  await sceneManager.changeScene(Crowd);
 }
 
 bootstrap();

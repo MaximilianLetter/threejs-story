@@ -1,0 +1,13 @@
+{
+  "intro": {
+    "loading": "Loading...",
+    "ready": "Click to start."
+  },
+  "crowd": {
+    "enter1": "Everyday, we come across a lot of people.",
+    "enter2": "An aweful lot of people.",
+    "instruction1": "Some do stand out to us. Who stands out to you?",
+    "instruction2": "Who else strikes your attention?",
+    "leave": "Some people, we ask ourselves, who actually are they?"
+  }
+}
